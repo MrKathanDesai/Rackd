@@ -63,11 +63,17 @@ function generateReference(warehouseId: number, type: string): string {
   const warehouse = db.prepare('SELECT code FROM warehouses WHERE id = ?').get(warehouseId) as any;
   if (!warehouse) throw new Error('Warehouse not found');
   const typeCode = TYPE_CODES[type];
-  const count = db.prepare(
-    'SELECT COUNT(*) as total FROM operations WHERE warehouse_id = ? AND type = ?'
-  ).get(warehouseId, type) as any;
-  const seq = String(count.total + 1).padStart(5, '0');
-  return `${warehouse.code}/${typeCode}/${seq}`;
+  const prefix = `${warehouse.code}/${typeCode}/`;
+  // Find the highest existing sequence number for this warehouse+type prefix
+  const last = db.prepare(
+    "SELECT reference FROM operations WHERE reference LIKE ? ORDER BY reference DESC LIMIT 1"
+  ).get(`${prefix}%`) as any;
+  let seq = 1;
+  if (last) {
+    const lastSeq = parseInt(last.reference.slice(prefix.length), 10);
+    if (!isNaN(lastSeq)) seq = lastSeq + 1;
+  }
+  return `${prefix}${String(seq).padStart(5, '0')}`;
 }
 
 function getDefaultLocation(warehouseId: number) {
