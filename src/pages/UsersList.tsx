@@ -8,6 +8,7 @@ import {
   useReactivateUser,
   useResendInvite,
   useRevokeInvite,
+  useDeleteUser,
 } from '../hooks/mutations';
 import { useToast } from '../hooks/useToast';
 import { Table, Button, Input, Select, Modal, Badge } from '../components/common';
@@ -42,6 +43,7 @@ export const UsersList: React.FC = () => {
   const reactivateMutation = useReactivateUser();
   const resendMutation = useResendInvite();
   const revokeMutation = useRevokeInvite();
+  const deleteMutation = useDeleteUser();
 
   const roleOptions = isSuperAdmin
     ? [
@@ -113,6 +115,16 @@ export const UsersList: React.FC = () => {
       toast('Invite revoked');
     } catch (err: any) {
       toast(err.response?.data?.error || 'Failed to revoke invite', 'error');
+    }
+  };
+
+  const handleDelete = async (u: UserDetail) => {
+    if (!confirm(`Permanently delete ${u.email}? This cannot be undone.`)) return;
+    try {
+      await deleteMutation.mutateAsync(u.id);
+      toast('User deleted');
+    } catch (err: any) {
+      toast(err.response?.data?.error || 'Failed to delete user', 'error');
     }
   };
 
@@ -255,6 +267,16 @@ export const UsersList: React.FC = () => {
                         onClick={() => handleRevoke(u)}
                       >
                         Revoke
+                      </Button>
+                    )}
+                    {/* Delete — not self, not super admin */}
+                    {!isSelf && !isSA && (
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => handleDelete(u)}
+                      >
+                        Delete
                       </Button>
                     )}
                   </td>

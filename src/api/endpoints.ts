@@ -115,6 +115,10 @@ export async function revokeInvite(id: number): Promise<void> {
   await api.post(`/users/${id}/revoke-invite`);
 }
 
+export async function deleteUser(id: number): Promise<void> {
+  await api.delete(`/users/${id}`);
+}
+
 export async function resetUserPassword(id: number, newPassword: string): Promise<void> {
   await api.post(`/users/${id}/reset-password`, { newPassword });
 }
@@ -360,6 +364,7 @@ export async function addReceiptLine(
   body: {
     product_id: number;
     demand_qty: number;
+    product_type?: 'green' | 'roasted';
     harvest_year?: number;
     process?: string;
     cupping_score?: number;

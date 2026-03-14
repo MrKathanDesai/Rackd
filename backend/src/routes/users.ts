@@ -493,6 +493,48 @@ router.post('/:id/reset-permissions', (req: AuthRequest, res: Response) => {
   }
 });
 
+// ── Delete user permanently ─────────────────────────────────────────
+router.delete('/:id', (req: AuthRequest, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as any;
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.is_super_admin) {
+      return res.status(400).json({ error: 'Cannot delete Super Admin' });
+    }
+
+    const requestingUser = db
+      .prepare('SELECT id, role, is_super_admin FROM users WHERE id = ?')
+      .get(req.user!.id) as any;
+
+    // Managers can only delete staff
+    if (!requestingUser.is_super_admin && user.role !== 'staff') {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+
+    // Cannot delete yourself
+    if (userId === requestingUser.id) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+
+    const transaction = db.transaction(() => {
+      db.prepare('DELETE FROM user_permissions WHERE user_id = ?').run(userId);
+      db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+    });
+
+    transaction();
+
+    res.json({ message: 'User deleted' });
+  } catch (error: any) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
 // ── Get role defaults (utility) ─────────────────────────────────────
 router.get('/meta/role-defaults', (req: AuthRequest, res: Response) => {
   res.json({

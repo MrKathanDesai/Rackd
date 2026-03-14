@@ -386,3 +386,11 @@ export function useResetUserPermissions() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
   });
 }
+
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: api.deleteUser,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  });
+}

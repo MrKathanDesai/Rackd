@@ -39,6 +39,7 @@ export const ReceiptDetail: React.FC = () => {
   const [showAddLine, setShowAddLine] = useState(false);
   const [newLine, setNewLine] = useState({
     product_id: '',
+    product_type: 'green' as 'green' | 'roasted',
     demand_qty: '',
     harvest_year: '',
     process: '',
@@ -131,12 +132,13 @@ export const ReceiptDetail: React.FC = () => {
         operationId: operation.id,
         product_id: Number(newLine.product_id),
         demand_qty: Number(newLine.demand_qty),
+        product_type: newLine.product_type,
         harvest_year: newLine.harvest_year ? Number(newLine.harvest_year) : undefined,
         process: newLine.process.trim() || undefined,
-        roast_date: newLine.roast_date || undefined,
+        roast_date: newLine.product_type === 'roasted' && newLine.roast_date ? newLine.roast_date : undefined,
         lot_notes: newLine.lot_notes.trim() || undefined,
       });
-      setNewLine({ product_id: '', demand_qty: '', harvest_year: '', process: '', roast_date: '', lot_notes: '' });
+      setNewLine({ product_id: '', product_type: 'green', demand_qty: '', harvest_year: '', process: '', roast_date: '', lot_notes: '' });
       setShowAddLine(false);
       toast('Line added');
     } catch (err: any) {
@@ -272,6 +274,7 @@ export const ReceiptDetail: React.FC = () => {
             <thead className="bg-gray-50">
               <tr className="text-xs uppercase text-left">
                 <th className="p-2">Product</th>
+                <th className="p-2">Type</th>
                 <th className="p-2 text-right">Demand</th>
                 <th className="p-2 text-right">Received</th>
                 <th className="p-2">Harvest</th>
@@ -291,6 +294,11 @@ export const ReceiptDetail: React.FC = () => {
                         {line.product_name}
                         <span className="text-xs text-gray-400 ml-1">{line.sku}</span>
                       </td>
+                      <td className="p-2 text-xs uppercase">
+                        <span className={line.product_type === 'roasted' ? 'text-amber-700' : 'text-green-700'}>
+                          {line.product_type}
+                        </span>
+                      </td>
                       <td className="p-2 text-sm text-right">
                         {line.demand_qty} {line.unit}
                       </td>
@@ -309,14 +317,18 @@ export const ReceiptDetail: React.FC = () => {
                       <td className="p-2 text-sm">{line.harvest_year ?? '-'}</td>
                       <td className="p-2 text-sm">{line.process ?? '-'}</td>
                       <td className="p-2">
-                        <input
-                          type="date"
-                          value={editValues.roast_date}
-                          onChange={(e) =>
-                            setEditValues({ ...editValues, roast_date: e.target.value })
-                          }
-                          className="w-36 px-1 py-1 border border-black text-sm"
-                        />
+                        {line.product_type === 'roasted' ? (
+                          <input
+                            type="date"
+                            value={editValues.roast_date}
+                            onChange={(e) =>
+                              setEditValues({ ...editValues, roast_date: e.target.value })
+                            }
+                            className="w-36 px-1 py-1 border border-black text-sm"
+                          />
+                        ) : (
+                          <span className="text-sm text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="p-2">
                         <input
@@ -356,6 +368,11 @@ export const ReceiptDetail: React.FC = () => {
                       <td className="p-2 text-sm font-bold">
                         {line.product_name}
                         <span className="text-xs text-gray-400 ml-1">{line.sku}</span>
+                      </td>
+                      <td className="p-2 text-xs uppercase">
+                        <span className={line.product_type === 'roasted' ? 'text-amber-700' : 'text-green-700'}>
+                          {line.product_type}
+                        </span>
                       </td>
                       <td className="p-2 text-sm text-right">
                         {line.demand_qty} {line.unit}
@@ -416,11 +433,17 @@ export const ReceiptDetail: React.FC = () => {
                 min="0.01"
                 step="0.01"
               />
-              <Input
-                type="number"
-                value={newLine.harvest_year}
-                onChange={(e) => setNewLine({ ...newLine, harvest_year: e.target.value })}
-                placeholder="Harvest year"
+              <Select
+                label="Coffee Type"
+                value={newLine.product_type}
+                onChange={(e) => {
+                  const pt = e.target.value as 'green' | 'roasted';
+                  setNewLine({ ...newLine, product_type: pt, roast_date: pt === 'green' ? '' : newLine.roast_date });
+                }}
+                options={[
+                  { value: 'green', label: 'Green Coffee' },
+                  { value: 'roasted', label: 'Roasted Coffee' },
+                ]}
               />
               <Input
                 value={newLine.process}
@@ -428,12 +451,22 @@ export const ReceiptDetail: React.FC = () => {
                 placeholder="Process"
               />
             </div>
-            <Input
-              label="Roast Date (if receiving pre-roasted)"
-              type="date"
-              value={newLine.roast_date}
-              onChange={(e) => setNewLine({ ...newLine, roast_date: e.target.value })}
-            />
+            <div className="grid grid-cols-3 gap-3">
+              <Input
+                type="number"
+                value={newLine.harvest_year}
+                onChange={(e) => setNewLine({ ...newLine, harvest_year: e.target.value })}
+                placeholder="Harvest year"
+              />
+              {newLine.product_type === 'roasted' && (
+                <Input
+                  label="Roast Date"
+                  type="date"
+                  value={newLine.roast_date}
+                  onChange={(e) => setNewLine({ ...newLine, roast_date: e.target.value })}
+                />
+              )}
+            </div>
             <div className="flex justify-end gap-2">
               <Button size="sm" onClick={() => setShowAddLine(false)}>
                 Cancel
@@ -454,7 +487,7 @@ export const ReceiptDetail: React.FC = () => {
       )}
       {isWaiting && (
         <div className="text-xs text-gray-400">
-          Waiting: Fill received quantities and cupping scores for each line, then Validate to create lots. Lines with a roast date create roasted lots; lines without create green lots.
+          Waiting: Fill received quantities and cupping scores for each line, then Validate to create lots. Each line's coffee type (Green/Roasted) determines the lot type created.
         </div>
       )}
     </div>

@@ -38,7 +38,7 @@ function FreshnessBar({ pct, status }: { pct: number; status: string }) {
 function LotExpandedRow({ lot }: { lot: FreshnessLot }) {
   return (
     <tr>
-      <td colSpan={8} className="p-4 bg-gray-50 border-t border-b">
+      <td colSpan={9} className="p-4 bg-gray-50 border-t border-b">
         <div className="grid grid-cols-4 gap-4 text-sm">
           <div>
             <span className="text-xs text-gray-400 uppercase block">Product</span>
@@ -194,6 +194,7 @@ export const Dashboard: React.FC = () => {
                   <th className="p-2">Product</th>
                   <th className="p-2">Warehouse</th>
                   <th className="p-2 text-right">Remaining</th>
+                  <th className="p-2">Roast Date</th>
                   <th className="p-2">Expiry</th>
                   <th className="p-2 w-48">Freshness</th>
                   <th className="p-2 text-right">%</th>
@@ -217,6 +218,9 @@ export const Dashboard: React.FC = () => {
                       </td>
                       <td className="p-2 text-sm text-right">
                         {lot.remaining_qty} {lot.unit}
+                      </td>
+                      <td className="p-2 text-sm">
+                        {lot.roast_date ? new Date(lot.roast_date).toLocaleDateString() : '-'}
                       </td>
                       <td className="p-2 text-sm">
                         {lot.expiry_date ? new Date(lot.expiry_date).toLocaleDateString() : '-'}

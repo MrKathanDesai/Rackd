@@ -164,6 +164,14 @@ function runIncrementalMigrations() {
   db.exec('CREATE INDEX IF NOT EXISTS idx_otps_email ON otps(email)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_otps_purpose ON otps(purpose)');
 
+  // ── Receipt lines: add product_type column ────────────────────────
+  if (hasTable('receipt_lines') && !hasColumn('receipt_lines', 'product_type')) {
+    console.log('Migration: adding product_type to receipt_lines');
+    db.exec("ALTER TABLE receipt_lines ADD COLUMN product_type TEXT NOT NULL DEFAULT 'green' CHECK(product_type IN ('green', 'roasted'))");
+    // Backfill: lines with roast_date set should be 'roasted'
+    db.exec("UPDATE receipt_lines SET product_type = 'roasted' WHERE roast_date IS NOT NULL AND roast_date != ''");
+  }
+
   console.log('Incremental migrations complete');
 }
 

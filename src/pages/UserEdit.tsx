@@ -9,6 +9,7 @@ import {
   useResetUserPassword,
   useSetUserPermissions,
   useResetUserPermissions,
+  useDeleteUser,
 } from '../hooks/mutations';
 import { useToast } from '../hooks/useToast';
 import { Button, Input, Select, Badge } from '../components/common';
@@ -118,6 +119,7 @@ export const UserEdit: React.FC = () => {
   const resetPwMutation = useResetUserPassword();
   const setPermMutation = useSetUserPermissions();
   const resetPermMutation = useResetUserPermissions();
+  const deleteMutation = useDeleteUser();
 
   // Editable state
   const [name, setName] = useState('');
@@ -169,6 +171,7 @@ export const UserEdit: React.FC = () => {
   const canChangeRole = isSuperAdmin && !isEditingSuperAdmin && !isSelf;
   const canEditPermissions = isSuperAdmin && !isEditingSuperAdmin;
   const canDeactivate = !isSelf && !isEditingSuperAdmin;
+  const canDelete = !isSelf && !isEditingSuperAdmin;
   const canResetPassword = !isEditingSuperAdmin || isSelf;
 
   const handleSave = async () => {
@@ -216,6 +219,17 @@ export const UserEdit: React.FC = () => {
       toast('User reactivated');
     } catch (err: any) {
       toast(err.response?.data?.error || 'Failed to reactivate', 'error');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm(`Permanently delete ${userDetail.email}? This cannot be undone.`)) return;
+    try {
+      await deleteMutation.mutateAsync(id);
+      toast('User deleted');
+      navigate('/settings/users');
+    } catch (err: any) {
+      toast(err.response?.data?.error || 'Failed to delete user', 'error');
     }
   };
 
@@ -491,6 +505,24 @@ export const UserEdit: React.FC = () => {
                 </div>
               </div>
             ))}
+        </div>
+      )}
+
+      {/* Danger Zone — Delete User */}
+      {canDelete && (
+        <div className="border border-red-300 p-4 space-y-3">
+          <h2 className="text-sm font-bold uppercase text-red-700">Danger Zone</h2>
+          <p className="text-xs text-gray-600">
+            Permanently delete this user and all associated permission overrides. This action cannot be undone.
+          </p>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={handleDelete}
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? 'Deleting...' : 'Delete User Permanently'}
+          </Button>
         </div>
       )}
     </div>

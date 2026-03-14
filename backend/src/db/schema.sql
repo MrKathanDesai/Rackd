@@ -126,6 +126,7 @@ CREATE TABLE IF NOT EXISTS receipt_lines (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     operation_id INTEGER NOT NULL,
     product_id INTEGER NOT NULL,
+    product_type TEXT NOT NULL CHECK(product_type IN ('green', 'roasted')) DEFAULT 'green',
     demand_qty REAL NOT NULL CHECK(demand_qty > 0),
     done_qty REAL NOT NULL DEFAULT 0 CHECK(done_qty >= 0),
     harvest_year INTEGER,

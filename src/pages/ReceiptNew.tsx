@@ -7,6 +7,7 @@ import { Button, Input, Select, Textarea } from '../components/common';
 
 interface ReceiptLineForm {
   product_id: string;
+  product_type: 'green' | 'roasted';
   demand_qty: string;
   harvest_year: string;
   process: string;
@@ -16,6 +17,7 @@ interface ReceiptLineForm {
 
 const emptyLine: ReceiptLineForm = {
   product_id: '',
+  product_type: 'green',
   demand_qty: '',
   harvest_year: '',
   process: '',
@@ -109,9 +111,10 @@ export const ReceiptNew: React.FC = () => {
           operationId: op.id,
           product_id: Number(line.product_id),
           demand_qty: Number(line.demand_qty),
+          product_type: line.product_type,
           harvest_year: line.harvest_year ? Number(line.harvest_year) : undefined,
           process: line.process.trim() || undefined,
-          roast_date: line.roast_date || undefined,
+          roast_date: line.product_type === 'roasted' && line.roast_date ? line.roast_date : undefined,
           lot_notes: line.lot_notes.trim() || undefined,
         });
       }
@@ -201,12 +204,20 @@ export const ReceiptNew: React.FC = () => {
                   min="0.01"
                   step="0.01"
                 />
-                <Input
-                  label="Harvest Year"
-                  type="number"
-                  value={line.harvest_year}
-                  onChange={(e) => updateLine(idx, 'harvest_year', e.target.value)}
-                  placeholder="e.g. 2024"
+                <Select
+                  label="Coffee Type"
+                  value={line.product_type}
+                  onChange={(e) => {
+                    updateLine(idx, 'product_type', e.target.value);
+                    // Clear roast_date when switching to green
+                    if (e.target.value === 'green') {
+                      updateLine(idx, 'roast_date', '');
+                    }
+                  }}
+                  options={[
+                    { value: 'green', label: 'Green Coffee' },
+                    { value: 'roasted', label: 'Roasted Coffee' },
+                  ]}
                 />
                 <Input
                   label="Process"
@@ -215,13 +226,22 @@ export const ReceiptNew: React.FC = () => {
                   placeholder="e.g. Washed"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <Input
-                  label="Roast Date (if receiving pre-roasted)"
-                  type="date"
-                  value={line.roast_date}
-                  onChange={(e) => updateLine(idx, 'roast_date', e.target.value)}
+                  label="Harvest Year"
+                  type="number"
+                  value={line.harvest_year}
+                  onChange={(e) => updateLine(idx, 'harvest_year', e.target.value)}
+                  placeholder="e.g. 2024"
                 />
+                {line.product_type === 'roasted' && (
+                  <Input
+                    label="Roast Date"
+                    type="date"
+                    value={line.roast_date}
+                    onChange={(e) => updateLine(idx, 'roast_date', e.target.value)}
+                  />
+                )}
                 <Input
                   label="Lot Notes"
                   value={line.lot_notes}
@@ -235,7 +255,7 @@ export const ReceiptNew: React.FC = () => {
       </div>
 
       <div className="text-xs text-gray-400">
-        Lines with a roast date will create roasted lots on validation. Lines without a roast date create green bean lots.
+        Select "Green Coffee" or "Roasted Coffee" for each line. This determines the lot type created on validation.
       </div>
 
       <div className="flex justify-end gap-2">

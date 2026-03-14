@@ -244,6 +244,7 @@ export interface ReceiptLine {
   id: number;
   operation_id: number;
   product_id: number;
+  product_type: ProductType;
   demand_qty: number;
   done_qty: number;
   harvest_year: number | null;

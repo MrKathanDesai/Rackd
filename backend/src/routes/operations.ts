@@ -463,15 +463,16 @@ router.post('/:id/lines', (req: AuthRequest, res: Response) => {
     }
 
     if (op.type === 'receipt') {
-      const { product_id, demand_qty, harvest_year, process, cupping_score, roast_date, lot_notes } = req.body;
+      const { product_id, demand_qty, harvest_year, process, cupping_score, roast_date, lot_notes, product_type } = req.body;
       if (!product_id || !demand_qty || demand_qty <= 0) {
         return res.status(400).json({ error: 'Product and valid demand_qty required' });
       }
+      const pType = product_type === 'roasted' ? 'roasted' : 'green';
 
       const result = db.prepare(`
-        INSERT INTO receipt_lines (operation_id, product_id, demand_qty, done_qty, harvest_year, process, cupping_score, roast_date, lot_notes)
-        VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?)
-      `).run(op.id, product_id, demand_qty, harvest_year || null, process || null, cupping_score || null, roast_date || null, lot_notes || null);
+        INSERT INTO receipt_lines (operation_id, product_id, product_type, demand_qty, done_qty, harvest_year, process, cupping_score, roast_date, lot_notes)
+        VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?)
+      `).run(op.id, product_id, pType, demand_qty, harvest_year || null, process || null, cupping_score || null, roast_date || null, lot_notes || null);
 
       const line = db.prepare(`
         SELECT rl.*, p.name as product_name, p.sku, p.unit
@@ -592,20 +593,23 @@ router.put('/:id/lines/:lineId', (req: AuthRequest, res: Response) => {
 
     if (op.type === 'receipt') {
       // In draft: can edit everything. In waiting: can edit done_qty, cupping_score, lot_notes
-      const { demand_qty, done_qty, harvest_year, process, cupping_score, roast_date, lot_notes } = req.body;
+      const { demand_qty, done_qty, harvest_year, process, cupping_score, roast_date, lot_notes, product_type } = req.body;
 
       if (op.status === 'draft') {
+        const pType = product_type === 'roasted' ? 'roasted' : (product_type === 'green' ? 'green' : undefined);
         db.prepare(`
           UPDATE receipt_lines SET demand_qty = COALESCE(?, demand_qty), done_qty = COALESCE(?, done_qty),
+            product_type = COALESCE(?, product_type),
             harvest_year = ?, process = ?, cupping_score = ?, roast_date = ?, lot_notes = ?
           WHERE id = ? AND operation_id = ?
-        `).run(demand_qty, done_qty, harvest_year ?? null, process ?? null, cupping_score ?? null, roast_date ?? null, lot_notes ?? null, req.params.lineId, op.id);
+        `).run(demand_qty, done_qty, pType, harvest_year ?? null, process ?? null, cupping_score ?? null, roast_date ?? null, lot_notes ?? null, req.params.lineId, op.id);
       } else if (op.status === 'waiting') {
         db.prepare(`
           UPDATE receipt_lines SET done_qty = COALESCE(?, done_qty),
-            cupping_score = COALESCE(?, cupping_score), lot_notes = COALESCE(?, lot_notes)
+            cupping_score = COALESCE(?, cupping_score), lot_notes = COALESCE(?, lot_notes),
+            roast_date = COALESCE(?, roast_date)
           WHERE id = ? AND operation_id = ?
-        `).run(done_qty, cupping_score, lot_notes, req.params.lineId, op.id);
+        `).run(done_qty, cupping_score, lot_notes, roast_date ?? null, req.params.lineId, op.id);
       } else {
         return res.status(400).json({ error: 'Cannot edit lines in this status' });
       }
@@ -980,9 +984,8 @@ router.post('/:id/validate', (req: AuthRequest, res: Response) => {
           const arrivalDate = op.scheduled_date || now.slice(0, 10);
           const lotNumber = generateLotNumber(supplierCode, product.sku, arrivalDate, product.id);
 
-          // Determine product_type from line context:
-          // If line has roast_date → roasted coffee received; otherwise → green beans
-          const productType = line.roast_date ? 'roasted' : 'green';
+          // Determine product_type from explicit field on the receipt line
+          const productType = line.product_type === 'roasted' ? 'roasted' : 'green';
 
           // Calculate expiry for roasted products
           // For received roasted coffee, shelf life starts from arrival date (not roast_date)
