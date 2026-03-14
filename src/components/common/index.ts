@@ -4,3 +4,4 @@ export { Input } from './Input';
 export { Select } from './Select';
 export { Textarea } from './Textarea';
 export { Table } from './Table';
+export { Modal } from './Modal';

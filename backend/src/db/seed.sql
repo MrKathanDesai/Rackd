@@ -1,0 +1,2 @@
+-- Rackd Coffee Roastery Management System
+-- Database starts clean. No seed data.

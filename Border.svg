@@ -1,4 +1,5 @@
-<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect x="1" y="1" width="38" height="38" stroke="#E7FF47" stroke-width="2"/>
-<path d="M10 10H16.6667V16.6667H23.3333V23.3333H30V30H10V10Z" fill="#E7FF47"/>
+<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <!-- The background is inherently transparent since no rect fills the background -->
+  <rect x="1" y="1" width="38" height="38" stroke="#E7FF47" stroke-width="2" fill="none"/>
+  <path d="M10 10H16.6667V16.6667H23.3333V23.3333H30V30H10V10Z" fill="#E7FF47"/>
 </svg>
