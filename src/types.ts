@@ -1,4 +1,6 @@
-export type Status = 'Processing' | 'Shipped' | 'Completed' | 'Pending' | 'Delayed' | 'Ready' | 'Draft' | 'Waiting' | 'Cancelled' | 'In Transit';
+export type Status = 'draft' | 'waiting' | 'ready' | 'done' | 'cancelled';
+
+export type OperationType = 'receipt' | 'delivery' | 'transfer' | 'adjustment';
 
 export interface Product {
   id: string;
@@ -10,52 +12,13 @@ export interface Product {
   reserved: number;
   available: number;
   reorderPt: number;
-  thumbnail?: string;
 }
 
-export interface Operation {
+export interface Location {
   id: string;
-  reference: string;
-  type: 'Receipt' | 'Delivery' | 'Transfer' | 'Return';
-  status: Status;
-  date: string;
-  warehouse: string;
-  items: number;
-}
-
-export interface Receipt {
-  id: string;
-  reference: string;
-  supplier: string;
-  location: string;
-  arrivalDate: string;
-  status: Status;
-  destination: string;
-  items: number;
-}
-
-export interface Delivery {
-  id: string;
-  reference: string;
-  customer: string;
-  destination: string;
-  shipDate: string;
-  status: Status;
-  sourceWh: string;
-  items: number;
-}
-
-export interface Move {
-  id: string;
-  reference: string;
-  date: string;
-  from: string;
-  to: string;
-  product: string;
-  qty: number;
-  unit: string;
-  type: 'Internal' | 'Inbound' | 'Outbound';
-  status: 'Success' | 'Pending' | 'Processing';
+  name: string;
+  type: 'stock' | 'transit' | 'customer' | 'supplier';
+  warehouseId?: string;
 }
 
 export interface Warehouse {
@@ -63,4 +26,47 @@ export interface Warehouse {
   name: string;
   code: string;
   address: string;
+}
+
+export interface OperationLine {
+  id: string;
+  productId: string;
+  productName: string;
+  productSku: string;
+  quantity: number;
+  uom: string;
+}
+
+export interface Operation {
+  id: string;
+  reference: string;
+  type: OperationType;
+  status: Status;
+  partner?: string;
+  scheduledDate: string;
+  sourceLocationId: string;
+  sourceLocationName: string;
+  destLocationId: string;
+  destLocationName: string;
+  notes?: string;
+  lines: OperationLine[];
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface StockMove {
+  id: string;
+  date: string;
+  operationId: string;
+  operationReference: string;
+  productId: string;
+  productName: string;
+  productSku: string;
+  fromLocationId: string;
+  fromLocationName: string;
+  toLocationId: string;
+  toLocationName: string;
+  quantity: number;
+  uom: string;
+  user: string;
 }
