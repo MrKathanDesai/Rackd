@@ -61,10 +61,10 @@ router.get('/kpis', requirePermission('dashboard.view'), (req: AuthRequest, res:
     const avgFreshness = (db.prepare(`
       SELECT AVG(
         CASE
-          WHEN p.shelf_life_days > 0 AND l.roast_date IS NOT NULL
-          THEN MAX(0, 100.0 - (julianday('now') - julianday(l.roast_date)) / p.shelf_life_days * 100)
           WHEN p.shelf_life_days > 0 AND l.expiry_date IS NOT NULL
           THEN MAX(0, (julianday(l.expiry_date) - julianday('now')) / p.shelf_life_days * 100)
+          WHEN p.shelf_life_days > 0 AND l.roast_date IS NOT NULL
+          THEN MAX(0, 100.0 - (julianday('now') - julianday(l.roast_date)) / p.shelf_life_days * 100)
           WHEN p.shelf_life_days > 0 AND l.arrival_date IS NOT NULL
           THEN MAX(0, 100.0 - (julianday('now') - julianday(l.arrival_date)) / p.shelf_life_days * 100)
           ELSE 100
@@ -102,24 +102,24 @@ router.get('/freshness-board', requirePermission('freshness.view'), (req: AuthRe
              s.name as supplier_name,
              w.name as warehouse_name, w.code as warehouse_code,
              CASE
-               WHEN p.shelf_life_days > 0 AND l.roast_date IS NOT NULL
-               THEN MAX(0, 100.0 - (julianday('now') - julianday(l.roast_date)) / p.shelf_life_days * 100)
                WHEN p.shelf_life_days > 0 AND l.expiry_date IS NOT NULL
                THEN MAX(0, (julianday(l.expiry_date) - julianday('now')) / p.shelf_life_days * 100)
+               WHEN p.shelf_life_days > 0 AND l.roast_date IS NOT NULL
+               THEN MAX(0, 100.0 - (julianday('now') - julianday(l.roast_date)) / p.shelf_life_days * 100)
                WHEN p.shelf_life_days > 0 AND l.arrival_date IS NOT NULL
                THEN MAX(0, 100.0 - (julianday('now') - julianday(l.arrival_date)) / p.shelf_life_days * 100)
                ELSE 100
              END as freshness_pct,
              CASE
                WHEN l.expiry_date IS NOT NULL AND date(l.expiry_date) < date('now') THEN 'expired'
-               WHEN p.shelf_life_days > 0 AND l.roast_date IS NOT NULL
-                 AND (100.0 - (julianday('now') - julianday(l.roast_date)) / p.shelf_life_days * 100) < 20 THEN 'red'
-               WHEN p.shelf_life_days > 0 AND l.roast_date IS NOT NULL
-                 AND (100.0 - (julianday('now') - julianday(l.roast_date)) / p.shelf_life_days * 100) < 50 THEN 'amber'
                WHEN p.shelf_life_days > 0 AND l.expiry_date IS NOT NULL
                  AND (julianday(l.expiry_date) - julianday('now')) / p.shelf_life_days * 100 < 20 THEN 'red'
                WHEN p.shelf_life_days > 0 AND l.expiry_date IS NOT NULL
                  AND (julianday(l.expiry_date) - julianday('now')) / p.shelf_life_days * 100 < 50 THEN 'amber'
+               WHEN p.shelf_life_days > 0 AND l.roast_date IS NOT NULL
+                 AND (100.0 - (julianday('now') - julianday(l.roast_date)) / p.shelf_life_days * 100) < 20 THEN 'red'
+               WHEN p.shelf_life_days > 0 AND l.roast_date IS NOT NULL
+                 AND (100.0 - (julianday('now') - julianday(l.roast_date)) / p.shelf_life_days * 100) < 50 THEN 'amber'
                WHEN p.shelf_life_days > 0 AND l.arrival_date IS NOT NULL
                  AND (100.0 - (julianday('now') - julianday(l.arrival_date)) / p.shelf_life_days * 100) < 20 THEN 'red'
                WHEN p.shelf_life_days > 0 AND l.arrival_date IS NOT NULL
